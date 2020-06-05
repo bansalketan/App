@@ -1,0 +1,171 @@
+package com.example.app;
+
+import androidx.appcompat.app.AppCompatActivity;
+
+import android.animation.Animator;
+import android.animation.AnimatorListenerAdapter;
+import android.annotation.TargetApi;
+import android.content.Intent;
+import android.os.Build;
+import android.os.Bundle;
+import android.util.DisplayMetrics;
+import android.view.Gravity;
+import android.view.View;
+import android.view.WindowManager;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.TextView;
+import android.widget.Toast;
+
+import com.backendless.Backendless;
+import com.backendless.BackendlessUser;
+import com.backendless.async.callback.AsyncCallback;
+import com.backendless.exceptions.BackendlessFault;
+
+public class Register extends AppCompatActivity {
+    private View mProgressView;
+    private View mLoginFormView;
+    private TextView tvLoad;
+    TextView tvName, tvMail, tvPassword, tvConfirm, tvCut;
+    EditText etName, etMail, etPassword, etConfirm;
+    Button btnRegister;
+
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_register);
+        mLoginFormView = findViewById(R.id.login_form);
+        mProgressView = findViewById(R.id.login_progress);
+        tvLoad = findViewById(R.id.tvLoad);
+        tvName = findViewById(R.id.tvName);
+        tvMail = findViewById(R.id.tvMail);
+        tvPassword = findViewById(R.id.tvPassword);
+        tvConfirm = findViewById(R.id.tvConfirm);
+        tvCut = findViewById(R.id.tvCut);
+        etName = findViewById(R.id.etName);
+        etMail = findViewById(R.id.etMail);
+        etPassword = findViewById(R.id.etPassword);
+        etConfirm = findViewById(R.id.etConfirm);
+        btnRegister = findViewById(R.id.btnResigter);
+
+
+        DisplayMetrics dm = new DisplayMetrics();
+        getWindowManager().getDefaultDisplay().getMetrics(dm);
+
+        int width=dm.widthPixels;
+        int height=dm.heightPixels;
+        getWindow().setLayout(width,height);
+
+        WindowManager.LayoutParams params= getWindow().getAttributes();
+        params.gravity= Gravity.CENTER;
+        params.x=0;
+        params.y= -20;
+        getWindow().setAttributes(params);
+
+        btnRegister.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if(etName.getText().toString().trim().isEmpty() || etMail.getText().toString().trim().isEmpty() ||
+                        etPassword.getText().toString().trim().isEmpty() ||etConfirm.getText().toString().trim().isEmpty())
+                {
+                    Toast.makeText(Register.this, "Enter all the details!!", Toast.LENGTH_SHORT).show();
+                }
+                else
+                {
+                    if(etPassword.getText().toString().trim().equals(etConfirm.getText().toString().trim()))
+                    {
+                        String name = etName.getText().toString().trim();
+                        String email = etMail.getText().toString().trim();
+                        String password = etPassword.getText().toString().trim();
+
+                        BackendlessUser user = new BackendlessUser();
+                        user.setEmail(email);
+                        user.setPassword(password);
+                        user.setProperty("name", name);
+                        showProgress(true);
+
+                        Backendless.UserService.register(user, new AsyncCallback<BackendlessUser>() {
+                            @Override
+                            public void handleResponse(BackendlessUser response) {
+                                Toast.makeText(Register.this, "Registered successfully", Toast.LENGTH_SHORT).show();
+                                Register.this.finish();
+                                startActivity(new Intent(Register.this,Login.class));
+                                etMail.getText().clear();
+                                etPassword.getText().clear();
+
+                            }
+
+                            @Override
+                            public void handleFault(BackendlessFault fault)
+                            {
+                                Toast.makeText(Register.this, "Error:"+fault.getMessage(), Toast.LENGTH_SHORT).show();
+                                showProgress(false);
+                            }
+                        });
+
+                    }
+                    else
+                    {
+                        Toast.makeText(Register.this, "please check the password!!", Toast.LENGTH_SHORT).show();
+                    }
+                }
+//                finish();
+            }
+        });
+
+        tvCut.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Register.this.finish();
+                startActivity(new Intent(Register.this,Login.class));
+            }
+        });
+    }
+    /**
+     * Shows the progress UI and hides the login form.
+     */
+    @TargetApi(Build.VERSION_CODES.HONEYCOMB_MR2)
+    private void showProgress(final boolean show) {
+        // On Honeycomb MR2 we have the ViewPropertyAnimator APIs, which allow
+        // for very easy animations. If available, use these APIs to fade-in
+        // the progress spinner.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB_MR2) {
+            int shortAnimTime = getResources().getInteger(android.R.integer.config_shortAnimTime);
+
+            mLoginFormView.setVisibility(show ? View.GONE : View.VISIBLE);
+            mLoginFormView.animate().setDuration(shortAnimTime).alpha(
+                    show ? 0 : 1).setListener(new AnimatorListenerAdapter() {
+                @Override
+                public void onAnimationEnd(Animator animation) {
+                    mLoginFormView.setVisibility(show ? View.GONE : View.VISIBLE);
+                }
+            });
+
+            mProgressView.setVisibility(show ? View.VISIBLE : View.GONE);
+            mProgressView.animate().setDuration(shortAnimTime).alpha(
+                    show ? 1 : 0).setListener(new AnimatorListenerAdapter() {
+                @Override
+                public void onAnimationEnd(Animator animation) {
+                    mProgressView.setVisibility(show ? View.VISIBLE : View.GONE);
+                }
+            });
+
+            tvLoad.setVisibility(show ? View.VISIBLE : View.GONE);
+            tvLoad.animate().setDuration(shortAnimTime).alpha(
+                    show ? 1 : 0).setListener(new AnimatorListenerAdapter() {
+                @Override
+                public void onAnimationEnd(Animator animation) {
+                    tvLoad.setVisibility(show ? View.VISIBLE : View.GONE);
+                }
+            });
+        } else {
+            // The ViewPropertyAnimator APIs are not available, so simply show
+            // and hide the relevant UI components.
+            mProgressView.setVisibility(show ? View.VISIBLE : View.GONE);
+            tvLoad.setVisibility(show ? View.VISIBLE : View.GONE);
+            mLoginFormView.setVisibility(show ? View.GONE : View.VISIBLE);
+        }
+    }
+
+}
